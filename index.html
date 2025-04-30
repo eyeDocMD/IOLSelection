@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>IOL Comparison Tool</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      background-color: #f7f9fc;
+    }
+    .logo {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .logo img {
+      max-width: 250px;
+    }
+    .section {
+      margin-bottom: 30px;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .lens-option {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      max-width: 500px;
+    }
+    .lens-option label {
+      flex-grow: 1;
+      margin-right: 10px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .recommendation-radio {
+      margin-left: auto;
+    }
+    .btn {
+      display: inline-block;
+      padding: 10px 20px;
+      margin: 10px 5px;
+      font-size: 16px;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background-color: #0056b3;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 12px;
+      text-align: center;
+    }
+    th {
+      background-color: #007BFF;
+      color: white;
+    }
+
+    .no-print {
+      display: block;
+    }
+
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #pdfContent, #pdfContent * {
+        visibility: visible;
+      }
+      #pdfContent {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="logo">
+    <img src="logo.png" alt="Acuity Eye Group Logo">
+  </div>
+
+  <div class="section no-print">
+    <h2>Patient Information</h2>
+    <label>Patient Name:</label><br>
+    <input type="text" id="patientName" style="width:100%; padding:8px; margin:8px 0;"><br>
+    <label>Notes:</label><br>
+    <textarea id="patientNotes" rows="3" style="width:100%; padding:8px;"></textarea>
+  </div>
+
+  <div class="section no-print">
+    <h2>Select 2–3 Lenses</h2>
+    <div id="lensList"></div>
+    <button class="btn" onclick="buildComparison()">Build Comparison</button>
+  </div>
+
+  <div id="comparisonContainer" class="section"></div>
+
+  <script>
+    const lenses = [
+       {
+        displayName: "Monofocal (patient with astigmatism)",
+        name: "Monofocal (Standard)",
+        type: "Monofocal",
+        expectedVision: "Good vision WITH glasses",
+        pros: "Improves overall vision clarity",
+        cons: "Glasses needed for distance/near/intermediate tasks",
+        cost: "$0 (covered)"
+      },
+      {
+        displayName: "Monofocal (minimal astigmatism)",
+        name: "Monofocal (Standard)",
+        type: "Monofocal",
+        expectedVision: "Good distance vision without glasses. Wear glasses for near",
+        pros: "Crisp distance vision with minimal side effects",
+        cons: "Glasses needed for near/intermediate tasks",
+        cost: "$0 (covered)"
+      },
+      {
+        displayName: "Monofocal (near vision target)",
+        name: "Monofocal (Standard) with near vision/myopia",
+        type: "Monofocal",
+        expectedVision: "Good NEAR vision without glasses. Wear glasses for distance",
+        pros: "Crisp near vision with minimal side effects",
+        cons: "Glasses needed for distance/intermediate tasks",
+        cost: "$0 (covered)"
+      },
+      {
+        displayName: "Panoptix",
+        name: "Alcon PanOptix",
+        type: "Trifocal",
+        expectedVision: "Greatly reduced need for glasses at all tasks",
+        pros: "Trifocal: Good distance, intermediate, and near vision",
+        cons: "Mild halos/glare at night. May need glasses for smallest print",
+        cost: "$3,000"
+      },
+      {
+        displayName: "Light Adjustable Lens",
+        name: "Light Adjustable Lens",
+        type: "Adjustable lens",
+        expectedVision: "Good distance, intermediate vision without glasses. May need readers for small print but can adjust lens to preferred vision target and blend eyes together to add range of vision.",
+        pros: "High precision distance vision of all lenses. Can fine tune prescription of implant after surgery. Works well in post LASIK/PRK eyes to adjust to most accurate vision result",
+        cons: "Extra clinic vists and may need readers for small print",
+        cost: "$5,000"
+      },
+            {
+        displayName: "Light Adjustable Lens+",
+        name: "Light Adjustable Lens",
+        type: "Adjustable lens with extended depth of focus",
+        expectedVision: "Good distance, intermediate vision without glasses. May need readers for smallest print but can adjust lens to preferred vision target.",
+        pros: "High precision distance vision of all lenses. Can fine tune prescription of implant after surgery. Has extended range of focus",
+        cons: "Extra clinic vists and may need readers for small print",
+        cost: "$5,000"
+      },
+      {
+        displayName: "Symfony",
+        name: "J&J Symfony",
+        type: "Extended Depth of Focus Lens",
+        expectedVision: "Good distance, intermediate vision without glasses. Small print likely to need glasses but good overall near vision",
+        pros: "Extended depth of focus; reduced halos",
+        cons: "Might require reading glasses for fine print",
+        cost: "$2,300"
+      },
+      {
+        displayName: "Vivity",
+        name: "Alcon Vivity",
+        type: "Extended Depth of Focus Lens",        
+        expectedVision: "Good distance, intermediate vision without glasses. Small print likely to need glasses but good overall near vision",
+        pros: "Extended range of vision without glasses for excellent distance/intermediate and good near vision",
+        cons: "Less near vision than trifocals",
+        cost: "$3,000"
+      },
+      {
+        displayName: "Synergy",
+        name: "J&J Synergy",
+        type: "Multifocal/Extended Depth of Focus Lens",
+        pros: "Combines multifocal and EDOF; best for night driving",
+        cons: "May have more halos than Symfony",
+        cost: "$2,600"
+      }
+
+    ];
+
+    const lensList = document.getElementById("lensList");
+
+    lenses.forEach((lens, i) => {
+      const id = "lens" + i;
+      lensList.innerHTML += `
+        <div class="lens-option">
+          <input type="checkbox" id="${id}" data-name="${lens.name}" data-type="${lens.type}" data-pros="${lens.pros}" data-cons="${lens.cons}" data-cost="${lens.cost}">
+          <label for="${id}">${lens.displayName}</label>
+          <div class="recommendation-radio">
+            <input type="radio" name="recommendation" value="${lens.name}"> Recommend
+          </div>
+        </div>
+      `;
+    });
+
+    function buildComparison() {
+      const checkboxes = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'));
+      const recommendation = document.querySelector('input[name="recommendation"]:checked');
+      const patientName = document.getElementById("patientName").value.trim();
+      const notes = document.getElementById("patientNotes").value.trim();
+
+      if (checkboxes.length < 2 || checkboxes.length > 3) {
+        alert("Please select 2 to 3 lenses.");
+        return;
+      }
+
+      if (!recommendation) {
+        alert("Please select a recommended lens.");
+        return;
+      }
+
+      const recommended = recommendation.value;
+
+      const headers = checkboxes.map(cb => cb.dataset.name);
+      const rows = {
+        "Recommended": checkboxes.map(cb => cb.dataset.name === recommended ? "⭐ Recommended" : ""),
+        "Lens Type": checkboxes.map(cb => cb.dataset.type),
+        "Pros": checkboxes.map(cb => cb.dataset.pros),
+        "Cons": checkboxes.map(cb => cb.dataset.cons),
+        "Cost": checkboxes.map(cb => cb.dataset.cost)
+      };
+
+      let html = `
+        <div id="pdfContent">
+          <div class="logo">
+            <img src="logo.png" alt="Acuity Eye Group Logo" width="200">
+            <h3>IOL Comparison Summary</h3>
+            ${patientName ? `<p><strong>Patient:</strong> ${patientName}</p>` : ""}
+          </div>
+          <table>
+            <thead>
+              <tr><th>Attribute</th>${headers.map(h => `<th>${h}</th>`).join('')}</tr>
+            </thead>
+            <tbody>
+              ${Object.entries(rows).map(([label, values]) =>
+                `<tr><td><strong>${label}</strong></td>${values.map(v => `<td>${v}</td>`).join('')}</tr>`
+              ).join('')}
+            </tbody>
+          </table>
+          ${notes ? `<p><strong>Notes:</strong> ${notes}</p>` : ""}
+          <div class="no-print" style="margin-top:20px;">
+            <button class="btn" onclick="downloadPDF()">Download PDF</button>
+            <button class="btn" onclick="window.print()">Print</button>
+          </div>
+        </div>
+      `;
+      document.getElementById("comparisonContainer").innerHTML = html;
+    }
+
+    async function downloadPDF() {
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF('p', 'pt', 'a4');
+      const content = document.getElementById("pdfContent").cloneNode(true);
+      content.querySelectorAll(".no-print").forEach(el => el.remove());
+      document.body.appendChild(content);
+      content.style.position = "absolute";
+      content.style.left = "-9999px";
+
+      const patientName = document.getElementById("patientName").value.trim();
+      const filename = patientName ? `IOL-Comparison-${patientName.replace(/\s+/g, '_')}.pdf` : "iol-comparison.pdf";
+
+      await pdf.html(content, {
+        x: 20,
+        y: 20,
+        callback: function(doc) {
+          document.body.removeChild(content);
+          doc.save(filename);
+        }
+      });
+    }
+  </script>
+</body>
+</html>
