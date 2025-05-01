@@ -29,7 +29,7 @@
       justify-content: space-between;
       align-items: center;
       padding: 6px 0;
-      max-width: 500px;
+      max-width: 600px;
     }
     .lens-option label {
       flex-grow: 1;
@@ -70,11 +70,9 @@
       background-color: #007BFF;
       color: white;
     }
-
     .no-print {
       display: block;
     }
-
     @media print {
       body * {
         visibility: hidden;
@@ -109,6 +107,22 @@
   </div>
 
   <div class="section no-print">
+    <h2>Select Region</h2>
+    <select id="regionSelect" style="padding: 8px;">
+      <option value="la">Los Angeles</option>
+      <option value="oc">Orange County</option>
+      <option value="sd">San Diego</option>
+      <option value="desert">Desert</option>
+    </select>
+  </div>
+
+  <div class="section no-print">
+    <h2>Add-ons</h2>
+    <label><input type="checkbox" id="laserAddOn"> Femtosecond Laser Assist (+$1,100)</label><br>
+    <label><input type="checkbox" id="oraAddOn"> ORA (+$500)</label>
+  </div>
+
+  <div class="section no-print">
     <h2>Select 2–3 Lenses</h2>
     <div id="lensList"></div>
     <button class="btn" onclick="buildComparison()">Build Comparison</button>
@@ -118,14 +132,13 @@
 
   <script>
     const lenses = [
-       {
+      {
         displayName: "Monofocal (patient with astigmatism)",
         name: "Monofocal (Standard)",
         type: "Monofocal",
         expectedVision: "Good vision WITH glasses",
         pros: "Improves overall vision clarity",
-        cons: "Glasses needed for distance/near/intermediate tasks",
-        cost: "$0 (covered)"
+        cons: "Glasses needed for distance/near/intermediate tasks"
       },
       {
         displayName: "Monofocal (minimal astigmatism)",
@@ -133,8 +146,7 @@
         type: "Monofocal",
         expectedVision: "Good distance vision without glasses. Wear glasses for near",
         pros: "Crisp distance vision with minimal side effects",
-        cons: "Glasses needed for near/intermediate tasks",
-        cost: "$0 (covered)"
+        cons: "Glasses needed for near/intermediate tasks"
       },
       {
         displayName: "Monofocal (near vision target)",
@@ -142,17 +154,23 @@
         type: "Monofocal",
         expectedVision: "Good NEAR vision without glasses. Wear glasses for distance",
         pros: "Crisp near vision with minimal side effects",
-        cons: "Glasses needed for distance/intermediate tasks",
-        cost: "$0 (covered)"
+        cons: "Glasses needed for distance/intermediate tasks"
+      },
+      {
+        displayName: "Monofocal with femto",
+        name: "Monofocal (Standard) with laser astigmatism correction",
+        type: "Monofocal",
+        expectedVision: "Good distance vision without glasses. Wear glasses for intermediate/near",
+        pros: "Crisp distance vision with minimal side effects",
+        cons: "Glasses needed for distance/intermediate tasks"
       },
       {
         displayName: "Toric Monofocal",
         name: "Toric Monofocal",
-        type: "Toric",
+        type: "Monofocal",
         expectedVision: "Good distance vision without glasses, need glasses for intermediate/near tasks",
         pros: "Good distance vision with reduced glasses need",
-        cons: "Will need glasses for small print and intermediate vision",
-        cost: "$2,450"
+        cons: "Will need glasses for small print and intermediate vision"
       },
       {
         displayName: "Panoptix",
@@ -160,76 +178,114 @@
         type: "Trifocal",
         expectedVision: "Greatly reduced need for glasses at all tasks",
         pros: "Trifocal: Good distance, intermediate, and near vision",
-        cons: "Mild halos/glare at night. May need glasses for smallest print",
-        cost: "$2,970"
+        cons: "Mild halos/glare at night. May need glasses for smallest print"
       },
       {
         displayName: "Light Adjustable Lens",
         name: "Light Adjustable Lens",
-        type: "Adjustable lens",
-        expectedVision: "Good distance, intermediate vision without glasses. May need readers for small print but can adjust lens to preferred vision target and blend eyes together to add range of vision.",
-        pros: "High precision distance vision of all lenses. Can fine tune prescription of implant after surgery. Works well in post LASIK/PRK eyes to adjust to most accurate vision result",
-        cons: "Extra clinic vists and may need readers for small print",
-        cost: "$5,000"
+        type: "Adjustable",
+        expectedVision: "Good distance, intermediate vision without glasses. May need readers for small print but can adjust lens to preferred vision target.",
+        pros: "High precision distance vision; fine-tune implant after surgery",
+        cons: "Extra clinic visits and may need readers"
       },
-            {
+      {
         displayName: "Light Adjustable Lens+",
         name: "Light Adjustable Lens",
-        type: "Adjustable lens with extended depth of focus",
-        expectedVision: "Good distance, intermediate vision without glasses. May need readers for smallest print but can adjust lens to preferred vision target.",
-        pros: "High precision distance vision of all lenses. Can fine tune prescription of implant after surgery. Has extended range of focus",
-        cons: "Extra clinic vists and may need readers for small print",
-        cost: "$5,000"
+        type: "Adjustable with extended depth of focus",
+        expectedVision: "Good distance, intermediate vision without glasses. May need readers for smallest print.",
+        pros: "High precision + extended range",
+        cons: "Extra clinic visits and may need readers"
       },
       {
         displayName: "Symfony",
         name: "J&J Symfony",
         type: "Extended Depth of Focus Lens",
-        expectedVision: "Good distance, intermediate vision without glasses. Small print likely to need glasses but good overall near vision",
+        expectedVision: "Good distance, intermediate vision without glasses. Small print likely to need glasses",
         pros: "Extended depth of focus; reduced halos",
-        cons: "Might require reading glasses for fine print",
-        cost: "$2,300"
+        cons: "May need readers for fine print"
       },
       {
         displayName: "Vivity",
         name: "Alcon Vivity",
-        type: "Extended Depth of Focus Lens",        
-        expectedVision: "Good distance, intermediate vision without glasses. Small print likely to need glasses but good overall near vision",
-        pros: "Extended range of vision without glasses for excellent distance/intermediate and good near vision",
-        cons: "Less near vision than trifocals",
-        cost: "$2,970"
+        type: "Extended Depth of Focus Lens",
+        expectedVision: "Good distance, intermediate vision without glasses. Small print likely to need glasses",
+        pros: "Extended range of vision",
+        cons: "Less near vision than trifocals"
       },
       {
         displayName: "Synergy",
         name: "J&J Synergy",
         type: "Multifocal/Extended Depth of Focus Lens",
         pros: "Combines multifocal and EDOF; best for night driving",
-        cons: "May have more halos than Symfony",
-        cost: "$2,600"
+        cons: "May have more halos than Symfony"
       }
-
     ];
+
+    const basePrices = {
+      la: {
+        "Monofocal (Standard)": "$0",
+        "Monofocal (Standard) with near vision/myopia": "$0",
+        "Toric Monofocal": "$2,450",
+        "Alcon PanOptix": "$2,970",
+        "Light Adjustable Lens": "$5,000",
+        "J&J Symfony": "$2,300",
+        "Alcon Vivity": "$2,970",
+        "J&J Synergy": "$2,600"
+      }
+    };
+    basePrices.oc = { ...basePrices.la };
+    basePrices.sd = { ...basePrices.la };
+    basePrices.desert = { ...basePrices.la };
 
     const lensList = document.getElementById("lensList");
 
+    const categories = {
+      "Monofocal": [],
+      "Extended Depth of Focus (EDOF)": [],
+      "Trifocal": [],
+      "Adjustable": []
+    };
+
     lenses.forEach((lens, i) => {
       const id = "lens" + i;
-      lensList.innerHTML += `
-        <div class="lens-option">
-          <input type="checkbox" id="${id}" data-name="${lens.name}" data-type="${lens.type}" data-pros="${lens.pros}" data-cons="${lens.cons}" data-cost="${lens.cost}">
-          <label for="${id}">${lens.displayName}</label>
-          <div class="recommendation-radio">
-            <input type="radio" name="recommendation" value="${lens.name}"> Recommend
-          </div>
-        </div>
-      `;
+      lens.id = id;
+      const type = lens.type.toLowerCase();
+      if (type.includes("monofocal")) {
+        categories["Monofocal"].push(lens);
+      } else if (type.includes("trifocal") || lens.name === "Alcon PanOptix") {
+        categories["Trifocal"].push(lens);
+      } else if (type.includes("adjustable")) {
+        categories["Adjustable"].push(lens);
+      } else if (type.includes("extended") || type.includes("edof")) {
+        categories["Extended Depth of Focus (EDOF)"].push(lens);
+      }
     });
+
+    lensList.innerHTML = "";
+    for (const [category, group] of Object.entries(categories)) {
+      if (group.length === 0) continue;
+      lensList.innerHTML += `<h3>${category}</h3>`;
+      group.forEach(lens => {
+        lensList.innerHTML += `
+          <div class="lens-option">
+            <input type="checkbox" id="${lens.id}" data-name="${lens.name}" data-type="${lens.type}" data-pros="${lens.pros}" data-cons="${lens.cons}">
+            <label for="${lens.id}">${lens.displayName}</label>
+            <div class="recommendation-radio">
+              <input type="radio" name="recommendation" value="${lens.name}"> Recommend
+            </div>
+          </div>
+        `;
+      });
+    }
 
     function buildComparison() {
       const checkboxes = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'));
       const recommendation = document.querySelector('input[name="recommendation"]:checked');
       const patientName = document.getElementById("patientName").value.trim();
       const notes = document.getElementById("patientNotes").value.trim();
+      const region = document.getElementById("regionSelect").value;
+      const addLaser = document.getElementById("laserAddOn").checked;
+      const addOra = document.getElementById("oraAddOn").checked;
 
       if (checkboxes.length < 2 || checkboxes.length > 3) {
         alert("Please select 2 to 3 lenses.");
@@ -241,15 +297,28 @@
         return;
       }
 
-      const recommended = recommendation.value;
+      const laserFee = addLaser ? 1100 : 0;
+      const oraFee = addOra ? 500 : 0;
 
+      const recommended = recommendation.value;
       const headers = checkboxes.map(cb => cb.dataset.name);
       const rows = {
         "Recommended": checkboxes.map(cb => cb.dataset.name === recommended ? "⭐ Recommended" : ""),
         "Lens Type": checkboxes.map(cb => cb.dataset.type),
         "Pros": checkboxes.map(cb => cb.dataset.pros),
         "Cons": checkboxes.map(cb => cb.dataset.cons),
-        "Cost above insurance": checkboxes.map(cb => cb.dataset.cost)
+        "Other": checkboxes.map(() => {
+          let parts = [];
+          if (addLaser) parts.push("Laser");
+          if (addOra) parts.push("ORA");
+          return parts.join(" + ");
+        }),
+        "Cost above insurance": checkboxes.map(cb => {
+          const name = cb.dataset.name;
+          let base = basePrices[region][name] || "$0";
+          let total = parseInt(base.replace(/\D/g, '')) + laserFee + oraFee;
+          return total ? `$${total.toLocaleString()}` : "$0";
+        })
       };
 
       let html = `
