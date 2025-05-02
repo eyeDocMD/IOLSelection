@@ -332,12 +332,14 @@
           if (addOra) parts.push("ORA");
           return parts.join(" + ");
         }),
-        "Cost above insurance": checkboxes.map(cb => {
-          const name = cb.dataset.name;
-          let base = basePrices[region][name] || "$0";
-          let total = parseInt(base.replace(/\D/g, '')) + laserFee + oraFee;
-          return total ? `$${total.toLocaleString()}` : "$0";
-        })
+    "Cost above insurance": checkboxes.map(cb => {
+      const name = cb.dataset.name;
+      let base = basePrices[region][name] || "$0";
+      let total = parseInt(base.replace(/\D/g, '')) + laserFee + oraFee;
+      return total
+        ? `$${total.toLocaleString()} per eye`
+        : "$0";
+})
       };
 
       let html = `
