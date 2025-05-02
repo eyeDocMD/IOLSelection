@@ -164,6 +164,14 @@
         pros: "Crisp distance vision with minimal side effects",
         cons: "Glasses needed for intermediate/near tasks"
       },
+         {
+        displayName: "Monofocal+ with femto",
+        name: "Monofocal+ (Standard) with laser astigmatism correction",
+        type: "Monofocal",
+        expectedVision: "Good distance and intermediate vision without glasses. Wear glasses for near tasks",
+        pros: "Crisp distance vision with minimal side effects",
+        cons: "Glasses needed for near tasks"
+      },
       {
         displayName: "Toric Monofocal",
         name: "Toric Monofocal",
@@ -201,7 +209,7 @@
         name: "Light Adjustable Lens",
         type: "Adjustable",
         expectedVision: "Good distance, intermediate vision without glasses. May need readers for small print but can adjust lens to preferred vision target.",
-        pros: "High precision distance vision; fine-tune implant after surgery",
+        pros: "Highest precision distance vision",
         cons: "Extra clinic visits and may need readers"
       },
       {
@@ -209,7 +217,7 @@
         name: "Light Adjustable Lens",
         type: "Adjustable with extended depth of focus",
         expectedVision: "Good distance, intermediate vision without glasses. May need readers for smallest print.",
-        pros: "High precision + extended range",
+        pros: "Highest precision + extended range",
         cons: "Extra clinic visits and may need readers"
       },
       {
@@ -217,23 +225,24 @@
         name: "J&J Symfony",
         type: "Extended Depth of Focus Lens",
         expectedVision: "Good distance, intermediate vision without glasses. Small print likely to need glasses",
-        pros: "Extended depth of focus; reduced halos",
-        cons: "May need readers for fine print"
+        pros: "Extended depth of focus",
+        cons: "May need readers for fine print, some halo/glare at night"
       },
       {
         displayName: "Vivity",
         name: "Alcon Vivity",
         type: "Extended Depth of Focus Lens",
-        expectedVision: "Good distance, intermediate vision without glasses. Small print likely to need glasses",
-        pros: "Extended range of vision",
+        expectedVision: "Good distance, intermediate vision without glasses. Good but not perfect near vision. Small print likely to need glasses",
+        pros: "Extended range of vision with minimal halo/glare",
         cons: "Less near vision than trifocals"
       },
       {
         displayName: "Synergy",
         name: "J&J Synergy",
         type: "Multifocal/Extended Depth of Focus Lens",
+        expectedVision: "Good distance, intermediate vision without glasses. Very good near vision",
         pros: "Combines multifocal and EDOF; best for night driving",
-        cons: "May have more halos than Symfony"
+        cons: "May have more halos than monofocal lens"
       }
     ];
 
@@ -287,7 +296,7 @@
       group.forEach(lens => {
         lensList.innerHTML += `
           <div class="lens-option">
-            <input type="checkbox" id="${lens.id}" data-name="${lens.name}" data-type="${lens.type}" data-pros="${lens.pros}" data-cons="${lens.cons}">
+            <input type="checkbox" id="${lens.id}" data-name="${lens.name}" data-type="${lens.type}" data-exp="${lens.expectedVision}" data-pros="${lens.pros}" data-cons="${lens.cons}">
             <label for="${lens.id}">${lens.displayName}</label>
             <div class="recommendation-radio">
               <input type="radio" name="recommendation" value="${lens.name}"> Recommend
@@ -324,6 +333,7 @@
       const rows = {
         "Recommended": checkboxes.map(cb => cb.dataset.name === recommended ? "⭐ Recommended" : ""),
         "Lens Type": checkboxes.map(cb => cb.dataset.type),
+        "Vision goal": checkboxes.map(cb => cb.dataset.exp),
         "Pros": checkboxes.map(cb => cb.dataset.pros),
         "Cons": checkboxes.map(cb => cb.dataset.cons),
         "Other": checkboxes.map(() => {
