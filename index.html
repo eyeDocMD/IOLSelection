@@ -1,3 +1,4 @@
+Working code:
 
 <!DOCTYPE html>
 <html lang="en">
@@ -74,10 +75,22 @@
     .no-print {
       display: block;
     }
-    @media print {
-      body * {
-        visibility: hidden;
-      }
+@media print {
+  .no-print { display: none; }
+  body { margin: 10px; }
+  
+  /* Force landscape */
+  @page { size: landscape; margin: 10mm; }
+
+  table {
+    font-size: 12px; /* slightly smaller font */
+    page-break-inside: avoid;
+  }
+
+  th, td {
+    padding: 4px 6px; /* reduce padding to fit more */
+  }
+}
       #pdfContent, #pdfContent * {
         visibility: visible;
       }
