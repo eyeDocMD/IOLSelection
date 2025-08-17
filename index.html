@@ -73,22 +73,10 @@
     .no-print {
       display: block;
     }
-@media print {
-  .no-print { display: none; }
-  body { margin: 10px; }
-  
-  /* Force landscape */
-  @page { size: landscape; margin: 10mm; }
-
-  table {
-    font-size: 12px; /* slightly smaller font */
-    page-break-inside: avoid;
-  }
-
-  th, td {
-    padding: 4px 6px; /* reduce padding to fit more */
-  }
-}
+    @media print {
+      body * {
+        visibility: hidden;
+      }
       #pdfContent, #pdfContent * {
         visibility: visible;
       }
@@ -394,24 +382,4 @@
     async function downloadPDF() {
       const { jsPDF } = window.jspdf;
       const pdf = new jsPDF('p', 'pt', 'a4');
-      const content = document.getElementById("pdfContent").cloneNode(true);
-      content.querySelectorAll(".no-print").forEach(el => el.remove());
-      document.body.appendChild(content);
-      content.style.position = "absolute";
-      content.style.left = "-9999px";
-
-      const patientName = document.getElementById("patientName").value.trim();
-      const filename = patientName ? `IOL-Comparison-${patientName.replace(/\s+/g, '_')}.pdf` : "iol-comparison.pdf";
-
-      await pdf.html(content, {
-        x: 20,
-        y: 20,
-        callback: function(doc) {
-          document.body.removeChild(content);
-          doc.save(filename);
-        }
-      });
-    }
-  </script>
-</body>
-</html>
+      const content
