@@ -122,9 +122,8 @@
     <label><input type="checkbox" id="oraAddOn"> ORA (+$500)</label>
   </div>
 
- 
   <div class="section no-print">
-    <h2>Select 2–3 Lenses</h2>
+    <h2>Select 2–4 Lenses</h2>
     <div id="lensList"></div>
     <button class="btn" onclick="buildComparison()">Build Comparison</button>
   </div>
@@ -316,8 +315,8 @@
       const addLaser = document.getElementById("laserAddOn").checked;
       const addOra = document.getElementById("oraAddOn").checked;
 
-      if (checkboxes.length < 2 || checkboxes.length > 3) {
-        alert("Please select 2 to 3 lenses.");
+      if (checkboxes.length < 2 || checkboxes.length > 4) {
+        alert("Please select 2 to 4 lenses.");
         return;
       }
 
