@@ -105,7 +105,7 @@
               <input type="checkbox" name="lens" value="${lens.name}"> ${lens.name}
             </label>
             <label>
-              <input type="radio" name="recommend-${lens.name}" value="recommended"> Recommend
+              <input type="checkbox" name="recommend-${lens.name}"> Recommend
             </label>
           </div>`;
       });
@@ -133,7 +133,7 @@
       });
       tableHTML += "</tr></thead><tbody>";
 
-      // Add Cost Row
+      // Cost Row
       tableHTML += "<tr><td>Cost</td>";
       checkboxes.forEach(cb => {
         const price = basePrices[region][cb.value] || 0;
@@ -141,26 +141,24 @@
       });
       tableHTML += "</tr>";
 
-      // Add Recommended Row (optional)
-      const recommendedRow = document.createElement("tr");
-      recommendedRow.innerHTML = "<td>Recommended</td>";
+      // Recommended Row (optional)
+      let recommendedRow = "<tr><td>Recommended</td>";
       let hasRecommendation = false;
-
       checkboxes.forEach(cb => {
-        const radio = document.querySelector(`input[name="recommend-${cb.value}"]`);
-        if (radio && radio.checked) {
-          recommendedRow.innerHTML += "<td>★ Recommended</td>";
+        const recommend = document.querySelector(`input[name="recommend-${cb.value}"]`);
+        if (recommend && recommend.checked) {
+          recommendedRow += "<td>★ Recommended</td>";
           hasRecommendation = true;
         } else {
-          recommendedRow.innerHTML += "<td></td>";
+          recommendedRow += "<td></td>";
         }
       });
-
+      recommendedRow += "</tr>";
       if (hasRecommendation) {
-        tableHTML += recommendedRow.outerHTML;
+        tableHTML += recommendedRow;
       }
 
-      // Add Other Row
+      // Add-ons Row
       tableHTML += "<tr><td>Other</td>";
       checkboxes.forEach(() => {
         let extras = [];
