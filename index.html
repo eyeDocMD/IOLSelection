@@ -5,401 +5,163 @@
   <title>IOL Comparison Tool</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
-    body {
-      font-family: sans-serif;
-      padding: 20px;
-      background-color: #f7f9fc;
-    }
-    .logo {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    .logo img {
-      max-width: 250px;
-    }
-    .section {
-      margin-bottom: 30px;
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    .lens-option {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 6px 0;
-      max-width: 600px;
-    }
-    .lens-option label {
-      flex-grow: 1;
-      margin-right: 10px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .recommendation-radio {
-      margin-left: auto;
-    }
-    .btn {
-      display: inline-block;
-      padding: 10px 20px;
-      margin: 10px 5px;
-      font-size: 16px;
-      background-color: #007BFF;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    .btn:hover {
-      background-color: #0056b3;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: white;
-      margin-top: 20px;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 12px;
-      text-align: center;
-    }
-    th {
-      background-color: #007BFF;
-      color: white;
-    }
-    .no-print {
-      display: block;
-    }
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h2 { margin-top: 30px; }
+    .lens-option { margin-bottom: 10px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; vertical-align: top; }
+    th { background-color: #f4f4f4; }
+    .btn { padding: 10px 15px; margin: 5px; cursor: pointer; }
+    .logo { margin-bottom: 20px; }
+    .no-print { margin-top: 20px; }
     @media print {
-      body * {
-        visibility: hidden;
-      }
-      #pdfContent, #pdfContent * {
-        visibility: visible;
-      }
-      #pdfContent {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-      }
-      .no-print {
-        display: none !important;
-      }
+      .no-print { display: none; }
+      body { margin: 0; }
     }
   </style>
 </head>
 <body>
-
   <div class="logo">
-    <img src="logo.png" alt="Acuity Eye Group Logo">
+    <img src="logo.png" alt="Acuity Eye Group Logo" width="200">
   </div>
 
-  <div class="section no-print">
-    <h2>Patient Information</h2>
-    <label>Patient Name:</label><br>
-    <input type="text" id="patientName" style="width:100%; padding:8px; margin:8px 0;"><br>
-    <label>Notes:</label><br>
-    <textarea id="patientNotes" rows="3" style="width:100%; padding:8px;"></textarea>
+  <h2>Select 2 to 4 Lenses</h2>
+  <div id="lensOptions"></div>
+
+  <h2>Recommendation (optional)</h2>
+  <div id="recommendOptions"></div>
+
+  <h2>Patient Info</h2>
+  <label>Patient Name: <input type="text" id="patientName"></label><br><br>
+  <label>Notes:<br><textarea id="patientNotes" rows="3" cols="50"></textarea></label>
+
+  <h2>Region</h2>
+  <select id="regionSelect">
+    <option value="la">Los Angeles</option>
+    <option value="inland">Inland Empire</option>
+    <option value="orange">Orange County</option>
+  </select>
+
+  <h2>Add-ons</h2>
+  <label><input type="checkbox" id="laserAddOn"> Laser (+$1100)</label><br>
+  <label><input type="checkbox" id="oraAddOn"> ORA (+$500)</label><br>
+
+  <div class="no-print">
+    <button class="btn" onclick="buildComparison()">Generate Comparison</button>
   </div>
 
-  <div class="section no-print">
-    <h2>Select Region</h2>
-    <select id="regionSelect" style="padding: 8px;">
-      <option value="la">Los Angeles</option>
-      <option value="oc">Orange County</option>
-      <option value="sd">San Diego</option>
-      <option value="desert">Desert</option>
-    </select>
-  </div>
+  <div id="comparisonContainer"></div>
 
-  <div class="section no-print">
-    <h2>Add-ons</h2>
-    <label><input type="checkbox" id="laserAddOn"> Femtosecond Laser Assist (+$1,100)</label><br>
-    <label><input type="checkbox" id="oraAddOn"> ORA (+$500)</label>
-  </div>
+<script>
+const lenses = [
+  { name: "Monofocal", type: "Monofocal", exp: "Clear distance vision, glasses for near", pros: "Covered by insurance", cons: "Need glasses for near" },
+  { name: "EDOF", type: "Extended Depth", exp: "Good distance & intermediate", pros: "Reduced halo/glare", cons: "May still need readers" },
+  { name: "Trifocal", type: "Multifocal", exp: "Distance, intermediate & near", pros: "Spectacle independence", cons: "More halos & glare" },
+  { name: "Light Adjustable", type: "Adjustable", exp: "Customized after surgery", pros: "Tailored vision", cons: "Requires UV glasses" }
+];
 
-  <div class="section no-print">
-    <h2>Select 2–4 Lenses</h2>
-    <div id="lensList"></div>
-    <button class="btn" onclick="buildComparison()">Build Comparison</button>
-  </div>
+const basePrices = {
+  la: { "Monofocal": "$0", "EDOF": "$2,000", "Trifocal": "$3,000", "Light Adjustable": "$4,000" },
+  inland: { "Monofocal": "$0", "EDOF": "$1,800", "Trifocal": "$2,800", "Light Adjustable": "$3,800" },
+  orange: { "Monofocal": "$0", "EDOF": "$2,200", "Trifocal": "$3,200", "Light Adjustable": "$4,200" }
+};
 
-  <div id="comparisonContainer" class="section"></div>
+// Build lens selection checkboxes & recommendation radios
+window.onload = function() {
+  const lensOptions = document.getElementById("lensOptions");
+  const recommendOptions = document.getElementById("recommendOptions");
 
-  <script>
-    const lenses = [
-      {
-        displayName: "Monofocal (patient with astigmatism)",
-        name: "Monofocal (Standard)",
-        type: "Monofocal",
-        expectedVision: "Good vision WITH glasses",
-        pros: "Improves overall vision clarity",
-        cons: "Glasses needed for distance/near/intermediate tasks"
-      },
-      {
-        displayName: "Monofocal (minimal astigmatism)",
-        name: "Monofocal (Standard)",
-        type: "Monofocal",
-        expectedVision: "Good distance vision without glasses. Wear glasses for near",
-        pros: "Crisp distance vision with minimal side effects",
-        cons: "Glasses needed for near/intermediate tasks"
-      },
-      {
-        displayName: "Monofocal (near vision target)",
-        name: "Monofocal (Standard) with near vision/myopia",
-        type: "Monofocal",
-        expectedVision: "Good NEAR vision without glasses. Wear glasses for distance",
-        pros: "Crisp near vision with minimal side effects",
-        cons: "Glasses needed for distance/intermediate tasks"
-      },
-      {
-        displayName: "Monofocal with femto",
-        name: "Monofocal (Standard) with laser astigmatism correction",
-        type: "Monofocal",
-        expectedVision: "Good distance vision without glasses. Wear glasses for intermediate/near",
-        pros: "Crisp distance vision with minimal side effects",
-        cons: "Glasses needed for intermediate/near tasks"
-      },
-         {
-        displayName: "Monofocal+ with femto",
-        name: "Monofocal+ (Standard) with laser astigmatism correction",
-        type: "Monofocal",
-        expectedVision: "Good distance and intermediate vision without glasses. Wear glasses for near tasks",
-        pros: "Crisp distance vision with minimal side effects",
-        cons: "Glasses needed for near tasks"
-      },
-      {
-        displayName: "Toric Monofocal",
-        name: "Toric Monofocal",
-        type: "Monofocal",
-        expectedVision: "Good distance vision without glasses, need glasses for intermediate/near tasks",
-        pros: "Good distance vision with reduced glasses need",
-        cons: "Will need glasses for small print and intermediate vision"
-      },
-      {
-        displayName: "Panoptix",
-        name: "Alcon PanOptix",
-        type: "Trifocal",
-        expectedVision: "Greatly reduced need for glasses at all tasks",
-        pros: "Good distance, intermediate, and near vision with reduced glasses need for most tasks",
-        cons: "Mild halos/glare at night. May need glasses for smallest print"
-      },
-            {
-        displayName: "Envy",
-        name: "Envista Envy",
-        type: "Trifocal",
-        expectedVision: "Greatly reduced need for glasses at all tasks",
-        pros: "Good distance, intermediate, and near vision with reduced glasses need for most tasks",
-        cons: "Mild halos/glare at night. May need glasses for smallest print"
-      },
-            {
-        displayName: "Odyssey",
-        name: "J&J Odyssey",
-        type: "Trifocal",
-        expectedVision: "Greatly reduced need for glasses at all tasks",
-        pros: "Good distance, intermediate, and near vision with reduced glasses need for most tasks",
-        cons: "Mild halos/glare at night. May need glasses for smallest print"
-      },
-      {
-        displayName: "Light Adjustable Lens",
-        name: "Light Adjustable Lens",
-        type: "Adjustable",
-        expectedVision: "Good distance, intermediate vision without glasses. May need readers for small print but can adjust lens to preferred vision target.",
-        pros: "Highest precision distance vision",
-        cons: "Extra clinic visits and may need readers"
-      },
-      {
-        displayName: "Light Adjustable Lens+",
-        name: "Light Adjustable Lens",
-        type: "Adjustable with extended depth of focus",
-        expectedVision: "Good distance, intermediate vision without glasses. May need readers for smallest print.",
-        pros: "Highest precision + extended range",
-        cons: "Extra clinic visits and may need readers"
-      },
-      {
-        displayName: "Symfony",
-        name: "J&J Symfony",
-        type: "Extended Depth of Focus Lens",
-        expectedVision: "Good distance, intermediate vision without glasses. Small print likely to need glasses",
-        pros: "Extended depth of focus",
-        cons: "May need readers for fine print, some halo/glare at night"
-      },
-      {
-        displayName: "Vivity",
-        name: "Alcon Vivity",
-        type: "Extended Depth of Focus Lens",
-        expectedVision: "Good distance, intermediate vision without glasses. Good but not perfect near vision. Small print likely to need glasses",
-        pros: "Extended range of vision with minimal halo/glare",
-        cons: "Less near vision than trifocals"
-      },
-      {
-        displayName: "Synergy",
-        name: "J&J Synergy",
-        type: "Multifocal/Extended Depth of Focus Lens",
-        expectedVision: "Good distance, intermediate vision without glasses. Very good near vision",
-        pros: "Combines multifocal and EDOF; best for night driving",
-        cons: "May have more halos than monofocal lens"
-      }
-    ];
+  lenses.forEach(lens => {
+    lensOptions.innerHTML += `
+      <div class="lens-option">
+        <label><input type="checkbox" value="${lens.name}" data-name="${lens.name}"
+        data-type="${lens.type}" data-exp="${lens.exp}"
+        data-pros="${lens.pros}" data-cons="${lens.cons}"> ${lens.name}</label>
+      </div>
+    `;
+    recommendOptions.innerHTML += `
+      <label><input type="radio" name="recommendation" value="${lens.name}"> ${lens.name}</label><br>
+    `;
+  });
+};
 
-    const basePrices = {
-      la: {
-        "Monofocal (Standard)": "$0",
-        "Monofocal (Standard) with near vision/myopia": "$0",
-        "Monofocal (Standard) with laser astigmatism correction": "$2,000",
-        "Toric Monofocal": "$2,450",
-        "Alcon PanOptix": "$2,970",
-        "J&J Odyssey": "$2,970",
-        "Envista Envy": "$2,970",
-        "Light Adjustable Lens": "$5,000",
-        "J&J Symfony": "$2,300",
-        "Alcon Vivity": "$2,970",
-        "J&J Synergy": "$2,600"
-      }
-    };
-    basePrices.oc = { ...basePrices.la };
-    basePrices.sd = { ...basePrices.la };
-    basePrices.desert = { ...basePrices.la };
+function buildComparison() {
+  const checkboxes = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'));
+  const recommendation = document.querySelector('input[name="recommendation"]:checked');
+  const patientName = document.getElementById("patientName").value.trim();
+  const notes = document.getElementById("patientNotes").value.trim();
+  const region = document.getElementById("regionSelect").value;
+  const addLaser = document.getElementById("laserAddOn").checked;
+  const addOra = document.getElementById("oraAddOn").checked;
 
-    const lensList = document.getElementById("lensList");
+  if (checkboxes.length < 2 || checkboxes.length > 4) {
+    alert("Please select 2 to 4 lenses.");
+    return;
+  }
 
-    const categories = {
-      "Monofocal": [],
-      "Extended Depth of Focus (EDOF)": [],
-      "Trifocal": [],
-      "Adjustable": []
-    };
+  const laserFee = addLaser ? 1100 : 0;
+  const oraFee = addOra ? 500 : 0;
 
-    lenses.forEach((lens, i) => {
-      const id = "lens" + i;
-      lens.id = id;
-      const type = lens.type.toLowerCase();
-      if (type.includes("monofocal")) {
-        categories["Monofocal"].push(lens);
-      } else if (type.includes("trifocal") || lens.name === "Alcon PanOptix") {
-        categories["Trifocal"].push(lens);
-      } else if (type.includes("adjustable")) {
-        categories["Adjustable"].push(lens);
-      } else if (type.includes("extended") || type.includes("edof")) {
-        categories["Extended Depth of Focus (EDOF)"].push(lens);
-      }
-    });
+  const headers = checkboxes.map(cb => cb.dataset.name);
 
-    lensList.innerHTML = "";
-    for (const [category, group] of Object.entries(categories)) {
-      if (group.length === 0) continue;
-      lensList.innerHTML += `<h3>${category}</h3>`;
-      group.forEach(lens => {
-        lensList.innerHTML += `
-          <div class="lens-option">
-            <input type="checkbox" id="${lens.id}" data-name="${lens.name}" data-type="${lens.type}" data-exp="${lens.expectedVision}" data-pros="${lens.pros}" data-cons="${lens.cons}">
-            <label for="${lens.id}">${lens.displayName}</label>
-            <div class="recommendation-radio">
-              <input type="radio" name="recommendation" value="${lens.name}"> Recommend
-            </div>
-          </div>
-        `;
-      });
-    }
-
-    function buildComparison() {
-      const checkboxes = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'));
-      const recommendation = document.querySelector('input[name="recommendation"]:checked');
-      const patientName = document.getElementById("patientName").value.trim();
-      const notes = document.getElementById("patientNotes").value.trim();
-      const region = document.getElementById("regionSelect").value;
-      const addLaser = document.getElementById("laserAddOn").checked;
-      const addOra = document.getElementById("oraAddOn").checked;
-
-      if (checkboxes.length < 2 || checkboxes.length > 4) {
-        alert("Please select 2 to 4 lenses.");
-        return;
-      }
-
-      if (!recommendation) {
-        alert("Please select a recommended lens.");
-        return;
-      }
-
-      const laserFee = addLaser ? 1100 : 0;
-      const oraFee = addOra ? 500 : 0;
-
-      const recommended = recommendation.value;
-      const headers = checkboxes.map(cb => cb.dataset.name);
-      const rows = {
-        "Recommended": checkboxes.map(cb => cb.dataset.name === recommended ? "⭐ Recommended" : ""),
-        "Lens Type": checkboxes.map(cb => cb.dataset.type),
-        "Vision goal": checkboxes.map(cb => cb.dataset.exp),
-        "Pros": checkboxes.map(cb => cb.dataset.pros),
-        "Cons": checkboxes.map(cb => cb.dataset.cons),
-        "Other": checkboxes.map(() => {
-          let parts = [];
-          if (addLaser) parts.push("Laser");
-          if (addOra) parts.push("ORA");
-          return parts.join(" + ");
-        }),
+  const rows = {
+    "Lens Type": checkboxes.map(cb => cb.dataset.type),
+    "Vision goal": checkboxes.map(cb => cb.dataset.exp),
+    "Pros": checkboxes.map(cb => cb.dataset.pros),
+    "Cons": checkboxes.map(cb => cb.dataset.cons),
+    "Other": checkboxes.map(() => {
+      let parts = [];
+      if (addLaser) parts.push("Laser");
+      if (addOra) parts.push("ORA");
+      return parts.join(" + ");
+    }),
     "Cost above insurance": checkboxes.map(cb => {
       const name = cb.dataset.name;
       let base = basePrices[region][name] || "$0";
       let total = parseInt(base.replace(/\D/g, '')) + laserFee + oraFee;
-      return total
-        ? `$${total.toLocaleString()} per eye`
-        : "$0";
-})
-      };
+      return total ? `$${total.toLocaleString()} per eye` : "$0";
+    })
+  };
 
-      let html = `
-        <div id="pdfContent">
-          <div class="logo">
-            <img src="logo.png" alt="Acuity Eye Group Logo" width="200">
-            <h3>IOL Comparison Summary</h3>
-            ${patientName ? `<p><strong>Patient:</strong> ${patientName}</p>` : ""}
-          </div>
-          <table>
-            <thead>
-              <tr><th>Attribute</th>${headers.map(h => `<th>${h}</th>`).join('')}</tr>
-            </thead>
-            <tbody>
-              ${Object.entries(rows).map(([label, values]) =>
-                `<tr><td><strong>${label}</strong></td>${values.map(v => `<td>${v}</td>`).join('')}</tr>`
-              ).join('')}
-            </tbody>
-          </table>
-          ${notes ? `<p><strong>Notes:</strong> ${notes}</p>` : ""}
-          <div class="no-print" style="margin-top:20px;">
-            <button class="btn" onclick="downloadPDF()">Download PDF</button>
-            <button class="btn" onclick="window.print()">Print</button>
-          </div>
-        </div>
-      `;
-      document.getElementById("comparisonContainer").innerHTML = html;
-    }
+  // Add Recommended row only if one is chosen
+  if (recommendation) {
+    const recommended = recommendation.value;
+    rows["Recommended"] = checkboxes.map(cb => cb.dataset.name === recommended ? "⭐ Recommended" : "");
+  }
 
-    async function downloadPDF() {
-      const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF('p', 'pt', 'a4');
-      const content = document.getElementById("pdfContent").cloneNode(true);
-      content.querySelectorAll(".no-print").forEach(el => el.remove());
-      document.body.appendChild(content);
-      content.style.position = "absolute";
-      content.style.left = "-9999px";
+  let html = `
+    <div id="pdfContent">
+      <div class="logo">
+        <img src="logo.png" alt="Acuity Eye Group Logo" width="200">
+        <h3>IOL Comparison Summary</h3>
+        ${patientName ? `<p><strong>Patient:</strong> ${patientName}</p>` : ""}
+      </div>
+      <table>
+        <thead>
+          <tr><th>Attribute</th>${headers.map(h => `<th>${h}</th>`).join('')}</tr>
+        </thead>
+        <tbody>
+          ${Object.entries(rows).map(([label, values]) =>
+            `<tr><td><strong>${label}</strong></td>${values.map(v => `<td>${v}</td>`).join('')}</tr>`
+          ).join('')}
+        </tbody>
+      </table>
+      ${notes ? `<p><strong>Notes:</strong> ${notes}</p>` : ""}
+      <div class="no-print" style="margin-top:20px;">
+        <button class="btn" onclick="downloadPDF()">Download PDF</button>
+        <button class="btn" onclick="window.print()">Print</button>
+      </div>
+    </div>
+  `;
+  document.getElementById("comparisonContainer").innerHTML = html;
+}
 
-      const patientName = document.getElementById("patientName").value.trim();
-      const filename = patientName ? `IOL-Comparison-${patientName.replace(/\s+/g, '_')}.pdf` : "iol-comparison.pdf";
-
-      await pdf.html(content, {
-        x: 20,
-        y: 20,
-        callback: function(doc) {
-          document.body.removeChild(content);
-          doc.save(filename);
-        }
-      });
-    }
-  </script>
+async function downloadPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: "landscape" });
+  const pdfContent = document.getElementById("pdfContent");
+  await doc.html(pdfContent, { callback: function(doc) { doc.save("IOL_Comparison.pdf"); }, x: 10, y: 10 });
+}
+</script>
 </body>
 </html>
