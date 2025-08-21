@@ -38,8 +38,9 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .recommendation-checkbox {
-      margin-left: auto;
+    .recommendation-checkbox input:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
     .btn {
       display: inline-block;
@@ -296,18 +297,32 @@
       group.forEach(lens => {
         lensList.innerHTML += `
           <div class="lens-option">
-            <input type="checkbox" id="${lens.id}" data-name="${lens.name}" data-type="${lens.type}" data-exp="${lens.expectedVision}" data-pros="${lens.pros}" data-cons="${lens.cons}">
+            <input type="checkbox" id="${lens.id}" data-name="${lens.name}" data-type="${lens.type}" data-exp="${lens.expectedVision}" data-pros="${lens.pros}" data-cons="${lens.cons}" onchange="updateRecommendationState('${lens.name}')">
             <label for="${lens.id}">${lens.displayName}</label>
             <div class="recommendation-checkbox">
-              <input type="checkbox" class="recommend-checkbox" value="${lens.name}"> Recommend
+              <input type="checkbox" class="recommend-checkbox" value="${lens.name}" id="rec-${lens.name}" disabled> Recommend
             </div>
           </div>
         `;
       });
     }
 
+    function updateRecommendationState(lensName) {
+      const lensCheckbox = document.querySelector(`[data-name="${lensName}"]`);
+      const recCheckbox = document.getElementById(`rec-${lensName}`);
+      
+      if (lensCheckbox.checked) {
+        recCheckbox.disabled = false;
+      } else {
+        recCheckbox.disabled = true;
+        recCheckbox.checked = false;
+      }
+    }
+
     function buildComparison() {
-      const checkboxes = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'));
+      const selectedLenses = Array.from(document.querySelectorAll('input[type="checkbox"]:checked')).filter(cb => 
+        cb.dataset.name && !cb.classList.contains('recommend-checkbox') && cb.id !== 'laserAddOn' && cb.id !== 'oraAddOn'
+      );
       const recommendationCheckboxes = Array.from(document.querySelectorAll('.recommend-checkbox:checked'));
       const patientName = document.getElementById("patientName").value.trim();
       const notes = document.getElementById("patientNotes").value.trim();
@@ -315,7 +330,7 @@
       const addLaser = document.getElementById("laserAddOn").checked;
       const addOra = document.getElementById("oraAddOn").checked;
 
-      if (checkboxes.length < 2 || checkboxes.length > 4) {
+      if (selectedLenses.length < 2 || selectedLenses.length > 4) {
         alert("Please select 2 to 4 lenses.");
         return;
       }
@@ -324,30 +339,30 @@
       const oraFee = addOra ? 500 : 0;
 
       const recommendedLenses = recommendationCheckboxes.map(cb => cb.value);
-      const headers = checkboxes.map(cb => cb.dataset.name);
+      const headers = selectedLenses.map(cb => cb.dataset.name);
       const rows = {
-        "Recommended": checkboxes.map(cb => {
+        "Recommended": selectedLenses.map(cb => {
           if (recommendedLenses.includes(cb.dataset.name)) {
             return "⭐ Recommended";
           }
           return "";
         }),
-        "Lens Type": checkboxes.map(cb => cb.dataset.type),
-        "Vision goal": checkboxes.map(cb => cb.dataset.exp),
-        "Pros": checkboxes.map(cb => cb.dataset.pros),
-        "Cons": checkboxes.map(cb => cb.dataset.cons),
-        "Other": checkboxes.map(() => {
+        "Lens Type": selectedLenses.map(cb => cb.dataset.type),
+        "Vision goal": selectedLenses.map(cb => cb.dataset.exp),
+        "Pros": selectedLenses.map(cb => cb.dataset.pros),
+        "Cons": selectedLenses.map(cb => cb.dataset.cons),
+        "Other": selectedLenses.map(() => {
           let parts = [];
           if (addLaser) parts.push("Laser");
           if (addOra) parts.push("ORA");
           return parts.join(" + ");
         }),
-    "Cost above insurance": checkboxes.map(cb => {
+    "Cost above insurance": selectedLenses.map(cb => {
       const name = cb.dataset.name;
       let base = basePrices[region][name] || "$0";
       let total = parseInt(base.replace(/\D/g, '')) + laserFee + oraFee;
       return total
-        ? `$${total.toLocaleString()} per eye`
+        ? `${total.toLocaleString()} per eye`
         : "$0";
 })
       };
