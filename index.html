@@ -38,7 +38,7 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .recommendation-radio {
+    .recommendation-checkbox {
       margin-left: auto;
     }
     .btn {
@@ -298,8 +298,8 @@
           <div class="lens-option">
             <input type="checkbox" id="${lens.id}" data-name="${lens.name}" data-type="${lens.type}" data-exp="${lens.expectedVision}" data-pros="${lens.pros}" data-cons="${lens.cons}">
             <label for="${lens.id}">${lens.displayName}</label>
-            <div class="recommendation-radio">
-              <input type="radio" name="recommendation" value="${lens.name}"> Recommend
+            <div class="recommendation-checkbox">
+              <input type="checkbox" class="recommend-checkbox" value="${lens.name}"> Recommend
             </div>
           </div>
         `;
@@ -308,7 +308,7 @@
 
     function buildComparison() {
       const checkboxes = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'));
-      const recommendation = document.querySelector('input[name="recommendation"]:checked');
+      const recommendationCheckboxes = Array.from(document.querySelectorAll('.recommend-checkbox:checked'));
       const patientName = document.getElementById("patientName").value.trim();
       const notes = document.getElementById("patientNotes").value.trim();
       const region = document.getElementById("regionSelect").value;
@@ -320,18 +320,18 @@
         return;
       }
 
-      if (!recommendation) {
-        alert("Please select a recommended lens.");
-        return;
-      }
-
       const laserFee = addLaser ? 1100 : 0;
       const oraFee = addOra ? 500 : 0;
 
-      const recommended = recommendation.value;
+      const recommendedLenses = recommendationCheckboxes.map(cb => cb.value);
       const headers = checkboxes.map(cb => cb.dataset.name);
       const rows = {
-        "Recommended": checkboxes.map(cb => cb.dataset.name === recommended ? "⭐ Recommended" : ""),
+        "Recommended": checkboxes.map(cb => {
+          if (recommendedLenses.includes(cb.dataset.name)) {
+            return "⭐ Recommended";
+          }
+          return "";
+        }),
         "Lens Type": checkboxes.map(cb => cb.dataset.type),
         "Vision goal": checkboxes.map(cb => cb.dataset.exp),
         "Pros": checkboxes.map(cb => cb.dataset.pros),
